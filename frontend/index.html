@@ -351,40 +351,40 @@
       </div>
 
       <!-- ── MARKET PRICES PAGE ── -->
-      <!-- AI Smart Market Finder -->
-<div class="card" style="border:2px solid #c8e6c9;background:linear-gradient(135deg,#fff 85%,#f0f7f0)">
-  <h3 style="color:#1a4d1a">🤖 AI Smart Market Finder</h3>
-  <p class="card-subtitle">Gemini AI will find the best market for maximum profit</p>
-  <div class="form-row">
-    <div class="form-group">
-      <label>🌾 Your Crop</label>
-      <input type="text" id="ai-crop" placeholder="e.g., Potato, Rice, Onion" />
-    </div>
-    <div class="form-group">
-      <label>⚖️ Quantity (kg)</label>
-      <input type="number" id="ai-qty" placeholder="e.g., 500" min="1" />
-    </div>
-  </div>
-  <div class="form-row">
-    <div class="form-group">
-      <label>📍 Your Location</label>
-      <input type="text" id="ai-location" placeholder="e.g., Bhatpara, West Bengal" />
-    </div>
-    <div class="form-group">
-      <label>🚛 Transport Budget (₹)</label>
-      <input type="number" id="ai-budget" placeholder="e.g., 500" />
-    </div>
-  </div>
-  <button class="btn-primary btn-full" id="ai-suggest-btn" onclick="getAISuggestion()">
-    🤖 Get AI Suggestion
-  </button>
-  <div id="ai-result" class="hidden" style="margin-top:1rem"></div>
-</div>
-
       <div id="page-market" class="page hidden">
         <div class="page-header">
           <h2>💰 Market Prices</h2>
           <p class="page-subtitle">Compare mandi prices & calculate best profit</p>
+        </div>
+
+        <!-- AI Smart Market Finder -->
+        <div class="card" style="border:2px solid #c8e6c9;background:linear-gradient(135deg,#fff 85%,#f0f7f0)">
+          <h3 style="color:#1a4d1a">🤖 AI Smart Market Finder</h3>
+          <p class="card-subtitle">Gemini AI will find the best market for maximum profit</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>🌾 Your Crop</label>
+              <input type="text" id="ai-crop" placeholder="e.g., Potato, Rice, Onion" />
+            </div>
+            <div class="form-group">
+              <label>⚖️ Quantity (kg)</label>
+              <input type="number" id="ai-qty" placeholder="e.g., 500" min="1" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>📍 Your Location</label>
+              <input type="text" id="ai-location" placeholder="e.g., Bhatpara, West Bengal" />
+            </div>
+            <div class="form-group">
+              <label>🚛 Transport Budget (₹)</label>
+              <input type="number" id="ai-budget" placeholder="e.g., 500" />
+            </div>
+          </div>
+          <button class="btn-primary btn-full" id="ai-suggest-btn" onclick="getAISuggestion()">
+            🤖 Get AI Suggestion
+          </button>
+          <div id="ai-result" class="hidden" style="margin-top:1rem"></div>
         </div>
 
         <!-- Filters -->
@@ -556,6 +556,50 @@
 
         <!-- Sell Tab -->
         <div id="mt-sell" class="market-tab-content hidden">
+
+          <!-- Crop Price Suggestion -->
+          <div class="card" style="border:2px solid #c8e6c9;background:linear-gradient(135deg,#fff 85%,#f0f7f0);margin-bottom:1.25rem">
+            <h3 style="color:#1a4d1a">📸 AI Crop Price Suggester</h3>
+            <p class="card-subtitle">Upload your crop photo — AI will suggest the fair price based on quality</p>
+
+            <div id="price-upload-zone" onclick="document.getElementById('price-image').click()"
+              style="border:3px dashed #2d6a2d;border-radius:14px;padding:2rem;text-align:center;cursor:pointer;background:#f0f7f0;margin-bottom:1rem">
+              <div style="font-size:2.5rem">📷</div>
+              <p style="color:#2d6a2d;font-weight:600;margin:.5rem 0">Click to upload crop photo</p>
+              <p style="color:#6c8c6c;font-size:.85rem">Take a clear photo of your crop</p>
+              <input type="file" id="price-image" accept="image/*" hidden onchange="previewPriceImage(event)" />
+            </div>
+
+            <div id="price-preview" style="display:none;text-align:center;margin-bottom:1rem">
+              <img id="price-preview-img" style="max-height:200px;border-radius:12px;margin:0 auto" />
+              <br/>
+              <button onclick="clearPriceImage()" style="margin-top:.5rem;padding:.4rem .8rem;border:1px solid #c0392b;background:#fff;color:#c0392b;border-radius:6px;cursor:pointer">✕ Remove</button>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>🌾 Crop Name</label>
+                <input type="text" id="price-crop" placeholder="e.g., Potato, Onion, Rice" />
+              </div>
+              <div class="form-group">
+                <label>⚖️ Quantity (kg)</label>
+                <input type="number" id="price-qty" placeholder="e.g., 200" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>💵 Your Suggested Price (₹/kg) — Optional</label>
+              <input type="number" id="price-suggested" placeholder="What price do you want? e.g., 25" step="0.5" />
+              <small style="color:#6c8c6c;font-size:.78rem">AI will tell you if your price is fair, too high or too low</small>
+            </div>
+
+            <button class="btn-primary btn-full" id="price-analyze-btn" onclick="analyzeCropPrice()">
+              🤖 Analyze & Get Price Suggestion
+            </button>
+
+            <div id="price-result" style="display:none;margin-top:1rem"></div>
+          </div>
+
           <div class="card">
             <h3>📦 List Your Crop for Sale</h3>
             <form onsubmit="listProduct(event)">

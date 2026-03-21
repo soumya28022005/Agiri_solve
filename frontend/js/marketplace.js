@@ -75,6 +75,13 @@ function searchProducts() {
 
 async function listProduct(e) {
   e.preventDefault();
+
+  const token = localStorage.getItem('agrimind_token');
+  if (!token) {
+    showToast('Please login first', 'error');
+    return;
+  }
+
   const body = {
     crop_name: document.getElementById('sell-crop').value,
     quantity: document.getElementById('sell-qty').value,
@@ -84,40 +91,37 @@ async function listProduct(e) {
     description: document.getElementById('sell-desc').value,
   };
 
+  if (!body.crop_name || !body.quantity || !body.price_per_unit) {
+    showToast('Please fill crop name, quantity and price', 'error');
+    return;
+  }
+
   const btn = e.target.querySelector('button[type=submit]');
-  btn.disabled = true; btn.textContent = '⏳ Listing...';
+  btn.disabled = true;
+  btn.textContent = '⏳ Listing...';
 
-  const { ok, data } = await MarketplaceAPI.listProduct(body);
-  btn.disabled = false; btn.textContent = '📢 List for Sale';
+  const res = await fetch('http://localhost:3000/api/marketplace/products', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(body)
+  });
 
-  if (!ok || !data.success) { showToast(data.message || 'Error listing product', 'error'); return; }
+  const data = await res.json();
+  btn.disabled = false;
+  btn.textContent = '📢 List for Sale';
+
+  if (!res.ok || !data.success) {
+    showToast(data.message || 'Error listing product', 'error');
+    return;
+  }
 
   showToast('✅ Crop listed successfully!', 'success');
   e.target.reset();
   loadMyListings();
   loadProducts();
-}
-
-async function loadMyListings() {
-  const { data } = await MarketplaceAPI.getMyListings();
-  const grid = document.getElementById('my-listings-grid');
-  if (!data.success || !data.products.length) {
-    grid.innerHTML = '<div class="loading-msg">No listings yet</div>';
-    return;
-  }
-  grid.innerHTML = data.products.map(p => `
-    <div class="product-card">
-      <div class="product-header">
-        <div class="product-crop">${p.crop_name}</div>
-        <div class="product-price">₹${p.price_per_unit}/kg</div>
-      </div>
-      <div class="product-meta">
-        <span>⚖️ ${p.quantity} kg</span>
-        <span>📍 ${p.district || '—'}</span>
-      </div>
-      <span class="status-${p.status}">${p.status === 'available' ? '✅ Available' : p.status === 'sold' ? '🔴 Sold' : '⏸️ Reserved'}</span>
-    </div>
-  `).join('');
 }
 
 async function loadMyOrders() {
@@ -187,4 +191,142 @@ async function submitOrder(e) {
   closeModal('order-modal');
   e.target.reset();
   loadProducts();
+}
+function previewPriceImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    document.getElementById('price-preview-img').src = ev.target.result;
+    document.getElementById('price-upload-zone').style.display = 'none';
+    document.getElementById('price-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPriceImage() {
+  document.getElementById('price-image').value = '';
+  document.getElementById('price-upload-zone').style.display = 'block';
+  document.getElementById('price-preview').style.display = 'none';
+  document.getElementById('price-result').style.display = 'none';
+}
+
+async function analyzeCropPrice() {
+  const fileInput = document.getElementById('price-image');
+  const crop = document.getElementById('price-crop').value;
+  const qty = document.getElementById('price-qty').value;
+  const suggested = document.getElementById('price-suggested').value;
+
+  if (!fileInput.files[0]) { showToast('Please upload a crop photo', 'error'); return; }
+  if (!crop) { showToast('Please enter crop name', 'error'); return; }
+
+  const btn = document.getElementById('price-analyze-btn');
+  btn.disabled = true;
+  btn.textContent = '🤖 AI is analyzing quality...';
+
+  const formData = new FormData();
+  formData.append('image', fileInput.files[0]);
+  formData.append('crop_name', crop);
+  if (qty) formData.append('quantity', qty);
+  if (suggested) formData.append('user_suggested_price', suggested);
+
+  const token = localStorage.getItem('agrimind_token');
+  const headers = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  try {
+    const res = await fetch('http://localhost:3000/api/price/analyze', {
+      method: 'POST',
+      headers,
+      body: formData
+    });
+    const data = await res.json();
+
+    btn.disabled = false;
+    btn.textContent = '🤖 Analyze & Get Price Suggestion';
+
+    if (!data.success) { showToast(data.message || 'Error analyzing', 'error'); return; }
+
+    const gradeColors = { A: '#2d6a2d', B: '#e67e22', C: '#e74c3c', D: '#c0392b' };
+    const gradeColor = gradeColors[data.analysis.grade] || '#2d6a2d';
+
+    const resultDiv = document.getElementById('price-result');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `
+      <!-- Grade Badge -->
+      <div style="display:flex;align-items:center;gap:1rem;background:linear-gradient(135deg,#1a4d1a,#2d6a2d);color:#fff;border-radius:14px;padding:1.25rem;margin-bottom:1rem">
+        <div style="width:70px;height:70px;background:${gradeColor};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:900;border:3px solid #fff">
+          ${data.analysis.grade}
+        </div>
+        <div>
+          <div style="font-size:1.1rem;font-weight:800">Quality Grade: ${data.analysis.grade}</div>
+          <div style="font-size:.9rem;opacity:.9">Score: ${data.analysis.quality_score}/10</div>
+          <div style="font-size:.85rem;opacity:.8;margin-top:.25rem">${data.analysis.quality_description || ''}</div>
+        </div>
+      </div>
+
+      <!-- Price Suggestion -->
+      <div style="background:#fff;border:2px solid #c8e6c9;border-radius:14px;padding:1.25rem;margin-bottom:1rem">
+        <h4 style="color:#1a4d1a;margin-bottom:.75rem">💰 AI Price Suggestion</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;text-align:center">
+          <div style="background:#f0f7f0;border-radius:10px;padding:.75rem">
+            <div style="font-size:.75rem;color:#6c8c6c;font-weight:600">MIN PRICE</div>
+            <div style="font-size:1.3rem;font-weight:800;color:#2d6a2d">₹${data.price_suggestion.min_price}/kg</div>
+          </div>
+          <div style="background:#1a4d1a;border-radius:10px;padding:.75rem">
+            <div style="font-size:.75rem;color:rgba(255,255,255,.8);font-weight:600">FAIR PRICE</div>
+            <div style="font-size:1.3rem;font-weight:800;color:#ffd700">₹${data.price_suggestion.fair_price}/kg</div>
+          </div>
+          <div style="background:#f0f7f0;border-radius:10px;padding:.75rem">
+            <div style="font-size:.75rem;color:#6c8c6c;font-weight:600">MAX PRICE</div>
+            <div style="font-size:1.3rem;font-weight:800;color:#2d6a2d">₹${data.price_suggestion.max_price}/kg</div>
+          </div>
+        </div>
+        ${qty ? `<div style="margin-top:.75rem;background:#fff3e0;border-radius:8px;padding:.6rem;text-align:center;font-weight:700;color:#e67e22">
+          Total Value: ₹${(data.price_suggestion.fair_price * qty).toLocaleString('en-IN')} for ${qty} kg
+        </div>` : ''}
+      </div>
+
+      <!-- Farmer Price Feedback -->
+      ${data.farmer_price_feedback ? `
+      <div style="background:${data.farmer_price_feedback.status === 'fair' ? '#e8f5e9' : data.farmer_price_feedback.status === 'too_low' ? '#fff3e0' : '#fdecea'};
+        border-radius:10px;padding:1rem;margin-bottom:1rem;border-left:4px solid ${data.farmer_price_feedback.status === 'fair' ? '#2d6a2d' : data.farmer_price_feedback.status === 'too_low' ? '#e67e22' : '#c0392b'}">
+        <strong>${data.farmer_price_feedback.icon} ${data.farmer_price_feedback.message}</strong>
+      </div>` : ''}
+
+      <!-- Market Comparison -->
+      <div style="background:#fff;border-radius:14px;padding:1rem;border:1px solid #e8f5e9;margin-bottom:1rem">
+        <h4 style="color:#1a4d1a;margin-bottom:.5rem">📊 Current Market Prices</h4>
+        ${data.market_data.markets.map((m, i) => `
+          <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid #f0f7f0">
+            <span style="font-size:.88rem">${i === 0 ? '🏆 ' : ''}${m.city}</span>
+            <span style="font-weight:700;color:#e67e22">₹${m.price_per_kg}/kg</span>
+          </div>
+        `).join('')}
+        ${data.market_data.best_market ? `<div style="margin-top:.5rem;font-size:.85rem;color:#2d6a2d;font-weight:600">
+          ⭐ Best market for your quality: ${data.market_data.best_market}
+        </div>` : ''}
+      </div>
+
+      <!-- Quality Details -->
+      <div style="background:#fff;border-radius:14px;padding:1rem;border:1px solid #e8f5e9;margin-bottom:1rem">
+        <h4 style="color:#1a4d1a;margin-bottom:.5rem">🔍 Quality Analysis</h4>
+        ${data.analysis.premium_factors ? `<div style="font-size:.85rem;color:#2d6a2d;margin-bottom:.35rem">✅ <strong>Premium factors:</strong> ${data.analysis.premium_factors}</div>` : ''}
+        ${data.analysis.quality_issues ? `<div style="font-size:.85rem;color:#c0392b;margin-bottom:.35rem">⚠️ <strong>Issues found:</strong> ${data.analysis.quality_issues}</div>` : ''}
+        ${data.negotiation_tip ? `<div style="font-size:.85rem;color:#1a4d1a;background:#f0f7f0;border-radius:6px;padding:.5rem;margin-top:.35rem">
+          💡 <strong>Negotiation tip:</strong> ${data.negotiation_tip}
+        </div>` : ''}
+      </div>
+
+      <div style="font-size:.72rem;color:#95b895;text-align:center">
+        Powered by ${data.powered_by} • ${new Date(data.timestamp).toLocaleString('en-IN')}
+      </div>
+    `;
+    resultDiv.scrollIntoView({ behavior: 'smooth' });
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '🤖 Analyze & Get Price Suggestion';
+    showToast('Network error. Is backend running?', 'error');
+  }
 }
