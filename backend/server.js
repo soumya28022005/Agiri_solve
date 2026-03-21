@@ -12,7 +12,7 @@ if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -31,6 +31,7 @@ app.use('/api/market', require('./routes/market'));
 app.use('/api/schemes', require('./routes/schemes'));
 app.use('/api/marketplace', require('./routes/marketplace'));
 app.use('/api/voice', require('./routes/voice'));
+app.use('/api/aimarket', require('./routes/aimarket'));
 
 // Health check
 app.get('/api/health', (req, res) => {

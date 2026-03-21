@@ -351,6 +351,36 @@
       </div>
 
       <!-- ── MARKET PRICES PAGE ── -->
+      <!-- AI Smart Market Finder -->
+<div class="card" style="border:2px solid #c8e6c9;background:linear-gradient(135deg,#fff 85%,#f0f7f0)">
+  <h3 style="color:#1a4d1a">🤖 AI Smart Market Finder</h3>
+  <p class="card-subtitle">Gemini AI will find the best market for maximum profit</p>
+  <div class="form-row">
+    <div class="form-group">
+      <label>🌾 Your Crop</label>
+      <input type="text" id="ai-crop" placeholder="e.g., Potato, Rice, Onion" />
+    </div>
+    <div class="form-group">
+      <label>⚖️ Quantity (kg)</label>
+      <input type="number" id="ai-qty" placeholder="e.g., 500" min="1" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>📍 Your Location</label>
+      <input type="text" id="ai-location" placeholder="e.g., Bhatpara, West Bengal" />
+    </div>
+    <div class="form-group">
+      <label>🚛 Transport Budget (₹)</label>
+      <input type="number" id="ai-budget" placeholder="e.g., 500" />
+    </div>
+  </div>
+  <button class="btn-primary btn-full" id="ai-suggest-btn" onclick="getAISuggestion()">
+    🤖 Get AI Suggestion
+  </button>
+  <div id="ai-result" class="hidden" style="margin-top:1rem"></div>
+</div>
+
       <div id="page-market" class="page hidden">
         <div class="page-header">
           <h2>💰 Market Prices</h2>
