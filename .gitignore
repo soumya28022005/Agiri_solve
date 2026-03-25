@@ -1,2 +1,2 @@
 backend/.env
-node_module
+/node_module
