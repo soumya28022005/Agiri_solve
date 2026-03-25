@@ -29,7 +29,14 @@ async function handleLogin(e) {
     localStorage.setItem('agrimind_token', data.token);
     localStorage.setItem('agrimind_user', JSON.stringify(data.user));
     showToast('🎉 Welcome to AgriMind AI!', 'success');
-    initMainApp();
+
+    // ── Redirect based on role ──
+    if (data.user.role === 'buyer') {
+      window.location.href = 'indexseller.html';
+    } else {
+      initMainApp();
+    }
+
   } else {
     errEl.textContent = data.message || 'Login failed';
     btn.disabled = false;
@@ -61,7 +68,14 @@ async function handleRegister(e) {
     localStorage.setItem('agrimind_token', data.token);
     localStorage.setItem('agrimind_user', JSON.stringify(data.user));
     showToast('✅ Registration successful!', 'success');
-    initMainApp();
+
+    // ── Redirect based on role ──
+    if (data.user.role === 'buyer') {
+      window.location.href = 'indexseller.html';
+    } else {
+      initMainApp();
+    }
+
   } else {
     errEl.textContent = data.message || 'Registration failed';
     btn.disabled = false;
@@ -81,10 +95,17 @@ function logout() {
 function checkAuth() {
   const token = getToken();
   const user = getUser();
+
   if (token && user) {
+    // ── If buyer somehow lands on index.html, redirect them ──
+    if (user.role === 'buyer') {
+      window.location.href = 'indexseller.html';
+      return false;
+    }
     initMainApp();
     return true;
   }
+
   document.getElementById('auth-screen').classList.remove('hidden');
   document.getElementById('auth-screen').classList.add('active');
   return false;

@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AgriMind AI — Buyer Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Mukta:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/main.css" />
+<style>
+  :root {
+    --buyer-main: #e67e22;
+    --buyer-dark: #a04000;
+    --buyer-light: #f39c12;
+    --buyer-pale: #fef3e2;
+    --buyer-bg: #fffaf5;
+  }
+  .buyer-header { background: linear-gradient(135deg, #a04000, #e67e22) !important; }
+  .buyer-sidebar { background: linear-gradient(180deg, #a04000, #c0550a) !important; }
+  .buyer-nav .nav-item.active { border-left-color: #ffd700 !important; }
+  .buyer-stat { border-color: #fde8c8 !important; }
+  .btn-buyer {
+    background: linear-gradient(135deg, var(--buyer-main), var(--buyer-light));
+    color: #fff; border: none;
+    padding: .75rem 1.5rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-display);
+    font-size: 1rem; font-weight: 700;
+    cursor: pointer; width: 100%;
+    box-shadow: 0 4px 15px rgba(230,126,34,.3);
+    transition: all .2s;
+  }
+  .btn-buyer:hover { transform: translateY(-2px); }
+  .price-tag {
+    background: linear-gradient(135deg, var(--buyer-main), var(--buyer-light));
+    color: #fff; border-radius: 12px;
+    padding: 1rem; text-align: center;
+  }
+  .price-tag .crop { font-size: .82rem; opacity: .85; }
+  .price-tag .amount { font-size: 1.5rem; font-weight: 800; }
+  .price-tag .unit { font-size: .72rem; opacity: .75; }
+  .farmer-card {
+    background: #fff; border-radius: var(--radius);
+    padding: 1.1rem; border: 2px solid #fde8c8;
+    box-shadow: var(--shadow-sm); transition: all .2s;
+  }
+  .farmer-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .order-card {
+    background: #fff; border-radius: var(--radius);
+    padding: 1.1rem; margin-bottom: .75rem;
+    border-left: 4px solid var(--buyer-main);
+    box-shadow: var(--shadow-sm);
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+<!-- ===== AUTH CHECK ===== -->
+<div id="auth-check" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#a04000,#e67e22)">
+  <div style="background:#fff;border-radius:20px;padding:2rem;text-align:center;max-width:400px;width:90%">
+    <div style="font-size:3rem">🧑‍💼</div>
+    <h2 style="font-family:'Baloo 2',sans-serif;color:#a04000;margin:.5rem 0">AgriMind AI</h2>
+    <p style="color:#6c8c6c">Buyer Portal</p>
+    <div id="auth-check-msg" style="color:#e67e22;margin-top:1rem">Checking login...</div>
+    <a href="index.html" style="display:block;margin-top:1rem;color:#a04000;font-size:.9rem">← Go to Login</a>
+  </div>
+</div>
+
+<!-- ===== BUYER APP ===== -->
+<div id="buyer-app" style="display:none">
+
+  <!-- Header -->
+  <header class="app-header buyer-header">
+    <div class="header-left">
+      <button class="menu-btn" onclick="toggleBuyerSidebar()">☰</button>
+      <div class="header-logo">🧑‍💼 <span>Buyer Dashboard</span></div>
+    </div>
+    <div class="header-right">
+      <div class="weather-badge" style="background:rgba(255,255,255,.2)" id="buyer-date-badge">📅 Today</div>
+      <div class="user-avatar" onclick="showBuyerPage('profile')" id="buyer-avatar">🧑‍💼</div>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <nav class="sidebar buyer-sidebar" id="buyer-sidebar">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">🧑‍💼</div>
+      <div class="sidebar-user-info">
+        <span id="buyer-sidebar-name">Buyer</span>
+        <span id="buyer-sidebar-phone" class="sidebar-phone">Loading...</span>
+      </div>
+    </div>
+    <div class="sidebar-nav buyer-nav">
+      <a class="nav-item active" onclick="showBuyerPage('dashboard')" data-page="dashboard">
+        <span class="nav-icon">🏠</span><span>Dashboard</span>
+      </a>
+      <a class="nav-item" onclick="showBuyerPage('prices')" data-page="prices">
+        <span class="nav-icon">💰</span><span>Update Prices</span>
+      </a>
+      <a class="nav-item" onclick="showBuyerPage('farmers')" data-page="farmers">
+        <span class="nav-icon">👨‍🌾</span><span>Browse Farmers</span>
+      </a>
+      <a class="nav-item" onclick="showBuyerPage('orders')" data-page="orders">
+        <span class="nav-icon">📦</span><span>My Orders</span>
+      </a>
+      <a class="nav-item" onclick="showBuyerPage('profile')" data-page="profile">
+        <span class="nav-icon">👤</span><span>My Profile</span>
+      </a>
+    </div>
+    <button class="sidebar-logout" onclick="buyerLogout()">🚪 Logout</button>
+  </nav>
+  <div class="sidebar-overlay" id="buyer-sidebar-overlay" onclick="toggleBuyerSidebar()"></div>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- ══ BUYER DASHBOARD ══ -->
+    <div id="bpage-dashboard" class="page active">
+      <div class="page-header">
+        <h2>Welcome, <span id="buyer-name">Buyer</span>! 🧑‍💼</h2>
+        <p class="page-subtitle" id="buyer-dash-subtitle">Manage your buying prices and view farmer listings</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card buyer-stat" onclick="showBuyerPage('prices')">
+          <div class="stat-icon">💰</div>
+          <div class="stat-info">
+            <span class="stat-number" id="bstat-prices" style="color:var(--buyer-main)">0</span>
+            <span class="stat-label">Active Prices</span>
+          </div>
+        </div>
+        <div class="stat-card buyer-stat" onclick="showBuyerPage('farmers')">
+          <div class="stat-icon">👨‍🌾</div>
+          <div class="stat-info">
+            <span class="stat-number" id="bstat-farmers" style="color:var(--buyer-main)">0</span>
+            <span class="stat-label">Farmer Listings</span>
+          </div>
+        </div>
+        <div class="stat-card buyer-stat" onclick="showBuyerPage('orders')">
+          <div class="stat-icon">📦</div>
+          <div class="stat-info">
+            <span class="stat-number" id="bstat-orders" style="color:var(--buyer-main)">0</span>
+            <span class="stat-label">Total Orders</span>
+          </div>
+        </div>
+        <div class="stat-card buyer-stat">
+          <div class="stat-icon">🌾</div>
+          <div class="stat-info">
+            <span class="stat-number" id="bstat-crops" style="color:var(--buyer-main)">0</span>
+            <span class="stat-label">Crops Listed</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <h3 class="section-title">⚡ Quick Actions</h3>
+      <div class="quick-actions">
+        <button class="quick-btn" onclick="showBuyerPage('prices')">
+          <span class="qb-icon">💰</span><span>Update<br>Prices</span>
+        </button>
+        <button class="quick-btn" onclick="showBuyerPage('farmers')">
+          <span class="qb-icon">👨‍🌾</span><span>Browse<br>Farmers</span>
+        </button>
+        <button class="quick-btn" onclick="showBuyerPage('orders')">
+          <span class="qb-icon">📦</span><span>My<br>Orders</span>
+        </button>
+        <button class="quick-btn" onclick="showBuyerPage('profile')">
+          <span class="qb-icon">👤</span><span>My<br>Profile</span>
+        </button>
+      </div>
+
+      <!-- Today's My Prices -->
+      <h3 class="section-title">📊 My Today's Buying Prices</h3>
+      <div id="buyer-today-prices" class="card">
+        <div class="loading-msg">Loading your prices...</div>
+      </div>
+
+      <!-- Mandi Price Comparison -->
+      <h3 class="section-title">📈 My Prices vs Mandi Prices</h3>
+      <div id="buyer-price-comparison" class="card">
+        <div class="loading-msg">Loading comparison...</div>
+      </div>
+    </div>
+
+    <!-- ══ UPDATE PRICES PAGE ══ -->
+    <div id="bpage-prices" class="page hidden">
+      <div class="page-header">
+        <h2>💰 Update My Buying Prices</h2>
+        <p class="page-subtitle">Set your daily prices — farmers will see these and sell to you</p>
+      </div>
+
+      <!-- Add Price Form -->
+      <div class="card" style="border:2px solid var(--buyer-main)">
+        <h3 style="color:var(--buyer-main)">➕ Add/Update Price for Today</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>🌾 Select Crop</label>
+            <select id="b-crop-select">
+              <option value="">Select crop</option>
+              <option value="Rice">Rice / ধান</option>
+              <option value="Wheat">Wheat / গম</option>
+              <option value="Potato">Potato / আলু</option>
+              <option value="Onion">Onion / পেঁয়াজ</option>
+              <option value="Tomato">Tomato / টমেটো</option>
+              <option value="Mustard">Mustard / সরিষা</option>
+              <option value="Jute">Jute / পাট</option>
+              <option value="Cauliflower">Cauliflower / ফুলকপি</option>
+              <option value="Brinjal">Brinjal / বেগুন</option>
+              <option value="Green Pea">Green Pea / মটর</option>
+              <option value="Maize">Maize / ভুট্টা</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>💵 My Buying Price (₹/kg)</label>
+            <input type="number" id="b-price-input" placeholder="e.g., 18" step="0.5" min="1" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>⚖️ Min Quantity I Need (kg)</label>
+            <input type="number" id="b-min-qty" placeholder="e.g., 100" min="0" />
+          </div>
+          <div class="form-group">
+            <label>⚖️ Max Quantity I Can Buy (kg)</label>
+            <input type="number" id="b-max-qty" placeholder="e.g., 5000" />
+          </div>
+        </div>
+        <button class="btn-buyer" onclick="submitBuyerPrice()">
+          📢 Publish Price — Farmers Will See This Immediately
+        </button>
+        <div id="b-price-msg" style="margin-top:.75rem"></div>
+      </div>
+
+      <!-- Active Prices Table -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <h3 style="margin:0">📋 My Active Prices Today</h3>
+          <button onclick="loadMyActivePrices()" class="btn-small" style="background:var(--buyer-main)">🔄 Refresh</button>
+        </div>
+        <div id="b-active-prices-table">
+          <div class="loading-msg">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Compare with Mandi -->
+      <div class="card" style="background:var(--buyer-pale);border:1px solid #fde8c8">
+        <h3 style="color:var(--buyer-dark)">📊 How My Prices Compare to Mandi</h3>
+        <p class="card-subtitle">See if your prices are competitive</p>
+        <div id="b-mandi-comparison">
+          <div class="loading-msg">Set prices first to see comparison</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ BROWSE FARMERS PAGE ══ -->
+    <div id="bpage-farmers" class="page hidden">
+      <div class="page-header">
+        <h2>👨‍🌾 Farmers Selling Crops</h2>
+        <p class="page-subtitle">Browse farmers listing crops for sale — call them directly</p>
+      </div>
+
+      <!-- Filters -->
+      <div class="card">
+        <div class="filter-row">
+          <div class="form-group">
+            <label>🌾 Filter by Crop</label>
+            <select id="b-farmer-crop-filter" onchange="loadFarmerProducts()">
+              <option value="">All Crops</option>
+              <option value="Rice">Rice</option>
+              <option value="Potato">Potato</option>
+              <option value="Onion">Onion</option>
+              <option value="Tomato">Tomato</option>
+              <option value="Wheat">Wheat</option>
+              <option value="Mustard">Mustard</option>
+              <option value="Jute">Jute</option>
+              <option value="Cauliflower">Cauliflower</option>
+              <option value="Brinjal">Brinjal</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>📍 Filter by District</label>
+            <select id="b-farmer-district-filter" onchange="loadFarmerProducts()">
+              <option value="">All Districts</option>
+              <option value="Kolkata">Kolkata</option>
+              <option value="Howrah">Howrah</option>
+              <option value="Durgapur">Durgapur</option>
+              <option value="Asansol">Asansol</option>
+              <option value="Bardhaman">Bardhaman</option>
+              <option value="Bhatpara">Bhatpara</option>
+              <option value="Siliguri">Siliguri</option>
+              <option value="Midnapore">Midnapore</option>
+            </select>
+          </div>
+        </div>
+        <input type="text" id="b-farmer-search"
+          placeholder="🔍 Search by crop name..."
+          oninput="loadFarmerProducts()"
+          style="width:100%;padding:.7rem 1rem;border:2px solid var(--border);border-radius:8px;margin-top:.5rem;font-size:.95rem" />
+      </div>
+
+      <div id="b-farmer-products" class="products-grid">
+        <div class="loading-msg">Loading farmer listings...</div>
+      </div>
+    </div>
+
+    <!-- ══ ORDERS PAGE ══ -->
+    <div id="bpage-orders" class="page hidden">
+      <div class="page-header">
+        <h2>📦 My Orders</h2>
+        <p class="page-subtitle">Orders you placed with farmers</p>
+      </div>
+
+      <div class="scheme-filters" style="margin-bottom:1rem">
+        <div class="filter-chips">
+          <button class="chip active" onclick="filterMyOrders('all', this)">All</button>
+          <button class="chip" onclick="filterMyOrders('pending', this)">⏳ Pending</button>
+          <button class="chip" onclick="filterMyOrders('confirmed', this)">✅ Confirmed</button>
+          <button class="chip" onclick="filterMyOrders('delivered', this)">📦 Delivered</button>
+          <button class="chip" onclick="filterMyOrders('cancelled', this)">❌ Cancelled</button>
+        </div>
+      </div>
+
+      <div id="b-orders-list">
+        <div class="loading-msg">Loading orders...</div>
+      </div>
+    </div>
+
+    <!-- ══ PROFILE PAGE ══ -->
+    <div id="bpage-profile" class="page hidden">
+      <div class="page-header">
+        <h2>👤 My Business Profile</h2>
+        <p class="page-subtitle">Manage your business details</p>
+      </div>
+
+      <div class="card profile-info-card" style="border:2px solid #fde8c8">
+        <div class="profile-header">
+          <div class="profile-avatar">🧑‍💼</div>
+          <div>
+            <h3 id="b-profile-name">Loading...</h3>
+            <p id="b-profile-phone">—</p>
+            <span class="role-badge" style="background:var(--buyer-main)">🧑‍💼 Buyer</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🏢 Business Details</h3>
+        <form onsubmit="saveBuyerBusinessProfile(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>🏢 Company / Business Name</label>
+              <input type="text" id="b-company" placeholder="e.g., Sharma Traders" />
+            </div>
+            <div class="form-group">
+              <label>📱 Business Phone</label>
+              <input type="tel" id="b-biz-phone" placeholder="10-digit number" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>🏙️ City</label>
+              <input type="text" id="b-city" placeholder="e.g., Kolkata" />
+            </div>
+            <div class="form-group">
+              <label>🏘️ District</label>
+              <input type="text" id="b-district" placeholder="e.g., South 24 Parganas" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>📍 State</label>
+              <select id="b-state">
+                <option value="West Bengal">West Bengal</option>
+                <option value="Bihar">Bihar</option>
+                <option value="Odisha">Odisha</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="Maharashtra">Maharashtra</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>🏠 Full Address</label>
+              <input type="text" id="b-address" placeholder="Business address" />
+            </div>
+          </div>
+          <button type="submit" class="btn-buyer">💾 Save Business Profile</button>
+        </form>
+      </div>
+
+      <div class="card" style="background:#fdecea;border:1px solid #e74c3c">
+        <h3 style="color:#c0392b">⚠️ Account</h3>
+        <button onclick="buyerLogout()" class="btn-primary btn-full" style="background:linear-gradient(135deg,#c0392b,#e74c3c)">
+          🚪 Logout
+        </button>
+      </div>
+    </div>
+
+  </main>
+</div><!-- /buyer-app -->
+</div><!-- /app -->
+
+<!-- Order Modal -->
+<div id="b-order-modal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>📦 Place Order</h3>
+      <button onclick="closeBuyerModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="b-order-product-info" style="background:var(--buyer-pale);border-radius:8px;padding:.75rem;margin-bottom:1rem"></div>
+      <form onsubmit="submitBuyerOrder(event)">
+        <div class="form-group">
+          <label>⚖️ Quantity (kg)</label>
+          <input type="number" id="b-order-qty" placeholder="How many kg?" min="1" required />
+        </div>
+        <div class="form-group">
+          <label>📱 Your Phone</label>
+          <input type="tel" id="b-order-phone" placeholder="Mobile number" required />
+        </div>
+        <div class="form-group">
+          <label>🏠 Delivery Address</label>
+          <textarea id="b-order-address" placeholder="Full delivery address" required></textarea>
+        </div>
+        <input type="hidden" id="b-order-product-id" />
+        <input type="hidden" id="b-order-max-qty" />
+        <button type="submit" class="btn-buyer">✅ Confirm Order</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<script>
+const API = 'http://localhost:3000/api';
+
+function getToken() { return localStorage.getItem('agrimind_token'); }
+function getUser() {
+  try { return JSON.parse(localStorage.getItem('agrimind_user') || 'null'); }
+  catch { return null; }
+}
+
+function showToast(msg, type = 'success', dur = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type}`;
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), dur);
+}
+
+async function api(endpoint, options = {}) {
+  const token = getToken();
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (options.body instanceof FormData) delete headers['Content-Type'];
+  try {
+    const res = await fetch(`${API}${endpoint}`, { ...options, headers });
+    const data = await res.json();
+    return { ok: res.ok, data };
+  } catch (e) {
+    return { ok: false, data: { success: false, message: 'Network error' } };
+  }
+}
+
+// ── AUTH CHECK ──
+window.addEventListener('DOMContentLoaded', () => {
+  const user = getUser();
+  const token = getToken();
+
+  if (!token || !user) {
+    document.getElementById('auth-check-msg').textContent = 'Not logged in. Redirecting...';
+    setTimeout(() => window.location.href = 'index.html', 1500);
+    return;
+  }
+
+  if (user.role !== 'buyer') {
+    document.getElementById('auth-check-msg').textContent = 'This portal is for buyers only. Redirecting...';
+    setTimeout(() => window.location.href = 'index.html', 1500);
+    return;
+  }
+
+  // Show buyer app
+  document.getElementById('auth-check').style.display = 'none';
+  document.getElementById('buyer-app').style.display = 'block';
+
+  // Set user info
+  document.getElementById('buyer-name').textContent = user.name.split(' ')[0];
+  document.getElementById('buyer-sidebar-name').textContent = user.name;
+  document.getElementById('buyer-sidebar-phone').textContent = user.phone;
+  document.getElementById('b-profile-name').textContent = user.name;
+  document.getElementById('b-profile-phone').textContent = user.phone;
+
+  const now = new Date();
+  document.getElementById('buyer-date-badge').textContent =
+    '📅 ' + now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  document.getElementById('buyer-dash-subtitle').textContent =
+    now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Load dashboard
+  showBuyerPage('dashboard');
+});
+
+function buyerLogout() {
+  localStorage.removeItem('agrimind_token');
+  localStorage.removeItem('agrimind_user');
+  window.location.href = 'index.html';
+}
+
+// ── NAVIGATION ──
+function showBuyerPage(pageName) {
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.classList.add('hidden');
+  });
+
+  const target = document.getElementById(`bpage-${pageName}`);
+  if (target) {
+    target.classList.add('active');
+    target.classList.remove('hidden');
+  }
+
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.page === pageName);
+  });
+
+  if (window.innerWidth < 768) {
+    document.getElementById('buyer-sidebar').classList.remove('open');
+    document.getElementById('buyer-sidebar-overlay').classList.remove('visible');
+  }
+
+  window.scrollTo({ top: 0 });
+
+  if (pageName === 'dashboard') loadBuyerDashboard();
+  if (pageName === 'prices') loadMyActivePrices();
+  if (pageName === 'farmers') loadFarmerProducts();
+  if (pageName === 'orders') loadMyOrders();
+  if (pageName === 'profile') loadBuyerBusinessProfile();
+}
+
+function toggleBuyerSidebar() {
+  document.getElementById('buyer-sidebar').classList.toggle('open');
+  document.getElementById('buyer-sidebar-overlay').classList.toggle('visible');
+}
+
+// ── DASHBOARD ──
+async function loadBuyerDashboard() {
+  loadTodayPrices();
+  loadDashboardComparison();
+  loadDashboardStats();
+}
+
+async function loadDashboardStats() {
+  const { data: profileData } = await api('/smartsell/buyer/profile');
+  const activePrices = profileData.active_prices || [];
+  document.getElementById('bstat-prices').textContent = activePrices.length;
+  document.getElementById('bstat-crops').textContent = activePrices.length;
+
+  const { data: productsData } = await api('/marketplace/products');
+  document.getElementById('bstat-farmers').textContent = productsData.total || 0;
+
+  const { data: ordersData } = await api('/marketplace/my-orders');
+  document.getElementById('bstat-orders').textContent = ordersData.orders?.length || 0;
+}
+
+async function loadTodayPrices() {
+  const container = document.getElementById('buyer-today-prices');
+  const { data } = await api('/smartsell/buyer/profile');
+  const prices = data.active_prices || [];
+
+  if (!prices.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:1.5rem;color:var(--text-muted)">
+        <div style="font-size:2rem;margin-bottom:.5rem">💰</div>
+        <p>No prices set today.</p>
+        <button onclick="showBuyerPage('prices')" class="btn-buyer" style="width:auto;padding:.6rem 1.5rem;margin-top:.75rem">
+          + Add Prices Now
+        </button>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.75rem">
+      ${prices.map(p => `
+        <div class="price-tag">
+          <div class="crop">${p.crop_name}</div>
+          <div class="amount">₹${p.price_per_kg}</div>
+          <div class="unit">/kg</div>
+          ${p.min_quantity ? `<div style="font-size:.7rem;opacity:.7;margin-top:.25rem">Min: ${p.min_quantity}kg</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+    <div style="text-align:right;margin-top:.75rem">
+      <button onclick="showBuyerPage('prices')" class="btn-small" style="background:var(--buyer-main)">
+        ✏️ Update Prices
+      </button>
+    </div>`;
+}
+
+async function loadDashboardComparison() {
+  const container = document.getElementById('buyer-price-comparison');
+  const { data: profileData } = await api('/smartsell/buyer/profile');
+  const myPrices = profileData.active_prices || [];
+
+  if (!myPrices.length) {
+    container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:1rem">Set your prices to see comparison with mandi rates</p>';
+    return;
+  }
+
+  const { data: mandiData } = await api('/market/prices');
+  const mandiPrices = mandiData.prices || [];
+
+  container.innerHTML = myPrices.map(mp => {
+    const matching = mandiPrices.filter(p => p.crop_name.toLowerCase() === mp.crop_name.toLowerCase());
+    const avgMandi = matching.length
+      ? (matching.reduce((s, p) => s + parseFloat(p.price_per_kg), 0) / matching.length).toFixed(0)
+      : null;
+
+    const diff = avgMandi ? (parseFloat(mp.price_per_kg) - parseFloat(avgMandi)).toFixed(0) : null;
+    const isAbove = diff >= 0;
+
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem;background:#fff;border-radius:10px;margin-bottom:.5rem;border:1px solid #fde8c8">
+        <div>
+          <strong style="font-size:.95rem">${mp.crop_name}</strong>
+          ${avgMandi ? `<div style="font-size:.75rem;color:var(--text-muted)">Mandi avg: ₹${avgMandi}/kg</div>` : '<div style="font-size:.75rem;color:var(--text-muted)">No mandi data</div>'}
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:800;color:var(--buyer-main);font-size:1rem">₹${mp.price_per_kg}/kg</div>
+          ${diff !== null ? `<div style="font-size:.75rem;color:${isAbove ? '#2d6a2d' : '#c0392b'}">
+            ${isAbove ? '✅ ₹' + diff + ' above mandi' : '⚠️ ₹' + Math.abs(diff) + ' below mandi'}
+          </div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── PRICES PAGE ──
+async function submitBuyerPrice() {
+  const crop = document.getElementById('b-crop-select').value;
+  const price = document.getElementById('b-price-input').value;
+  const minQty = document.getElementById('b-min-qty').value;
+  const maxQty = document.getElementById('b-max-qty').value;
+
+  if (!crop || !price) {
+    showToast('Please select crop and enter price', 'error');
+    return;
+  }
+
+  const { ok, data } = await api('/smartsell/buyer/price', {
+    method: 'POST',
+    body: JSON.stringify({ crop_name: crop, price_per_kg: price, min_quantity: minQty, max_quantity: maxQty })
+  });
+
+  const msg = document.getElementById('b-price-msg');
+  if (ok && data.success) {
+    msg.innerHTML = `<div style="background:#e8f5e9;padding:.75rem;border-radius:8px;color:#1a4d1a;font-weight:600">
+      ✅ ${data.message} — Farmers can see your price now!
+    </div>`;
+    showToast('✅ Price published!', 'success');
+    document.getElementById('b-crop-select').value = '';
+    document.getElementById('b-price-input').value = '';
+    document.getElementById('b-min-qty').value = '';
+    document.getElementById('b-max-qty').value = '';
+    loadMyActivePrices();
+  } else {
+    msg.innerHTML = `<div style="background:#fdecea;padding:.75rem;border-radius:8px;color:#c0392b">❌ ${data.message}</div>`;
+  }
+}
+
+async function loadMyActivePrices() {
+  const container = document.getElementById('b-active-prices-table');
+  const { data } = await api('/smartsell/buyer/profile');
+  const prices = data.active_prices || [];
+
+  if (!prices.length) {
+    container.innerHTML = `
+      <div class="empty-msg">
+        <div class="empty-icon">💰</div>
+        <h3>No prices set</h3>
+        <p>Add your buying prices above. Farmers will see them and contact you!</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <table class="prices-table">
+      <thead>
+        <tr style="background:var(--buyer-main)">
+          <th>Crop</th>
+          <th>My Price</th>
+          <th>Min Qty</th>
+          <th>Max Qty</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${prices.map(p => `
+          <tr>
+            <td><strong>${p.crop_name}</strong></td>
+            <td style="font-weight:800;color:var(--buyer-main);font-size:1rem">₹${p.price_per_kg}/kg</td>
+            <td>${p.min_quantity || 0} kg</td>
+            <td>${p.max_quantity || 'No limit'}</td>
+            <td style="font-size:.78rem;color:var(--text-muted)">${new Date(p.date_updated).toLocaleDateString('en-IN')}</td>
+            <td>
+              <button onclick="removePrice(${p.id})"
+                style="background:#fdecea;color:#c0392b;border:1px solid #e74c3c;padding:.3rem .6rem;border-radius:6px;cursor:pointer;font-size:.78rem">
+                ✕ Remove
+              </button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+
+  loadMandiComparison(prices);
+}
+
+async function removePrice(id) {
+  const { data } = await api(`/smartsell/buyer/price/${id}/deactivate`, { method: 'PUT' });
+  if (data.success) {
+    showToast('Price removed', 'success');
+    loadMyActivePrices();
+  } else {
+    showToast('Error removing price', 'error');
+  }
+}
+
+async function loadMandiComparison(myPrices) {
+  const container = document.getElementById('b-mandi-comparison');
+  if (!myPrices || !myPrices.length) {
+    container.innerHTML = '<p style="color:var(--text-muted)">Set prices first</p>';
+    return;
+  }
+
+  const { data } = await api('/market/prices');
+  const mandiPrices = data.prices || [];
+
+  container.innerHTML = myPrices.map(mp => {
+    const matching = mandiPrices.filter(p => p.crop_name.toLowerCase() === mp.crop_name.toLowerCase());
+    const avgMandi = matching.length
+      ? (matching.reduce((s, p) => s + parseFloat(p.price_per_kg), 0) / matching.length).toFixed(0)
+      : null;
+    const maxMandi = matching.length ? Math.max(...matching.map(p => parseFloat(p.price_per_kg))) : null;
+    const diff = avgMandi ? (parseFloat(mp.price_per_kg) - parseFloat(avgMandi)).toFixed(0) : null;
+    const isAbove = diff >= 0;
+
+    return `
+      <div style="background:#fff;border-radius:10px;padding:.85rem;margin-bottom:.5rem;border:1px solid #fde8c8">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <strong>${mp.crop_name}</strong>
+            ${avgMandi ? `
+              <div style="font-size:.78rem;color:var(--text-muted);margin-top:.2rem">
+                Mandi avg: ₹${avgMandi}/kg | Max: ₹${maxMandi}/kg
+              </div>` : '<div style="font-size:.78rem;color:var(--text-muted)">No mandi data available</div>'}
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:800;color:var(--buyer-main)">Your: ₹${mp.price_per_kg}/kg</div>
+            ${diff !== null ? `
+              <div style="font-size:.75rem;font-weight:600;color:${isAbove ? '#2d6a2d' : '#c0392b'}">
+                ${isAbove ? '✅ You pay ₹' + diff + ' more than avg' : '⚠️ ₹' + Math.abs(diff) + ' below mandi avg'}
+              </div>` : ''}
+          </div>
+        </div>
+        ${diff !== null && !isAbove ? `
+          <div style="background:#fff3e0;border-radius:6px;padding:.4rem .6rem;margin-top:.4rem;font-size:.78rem;color:#7a4500">
+            💡 Consider raising your price to ₹${avgMandi} to attract more farmers
+          </div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ── FARMERS PAGE ──
+async function loadFarmerProducts() {
+  const crop = document.getElementById('b-farmer-crop-filter')?.value || '';
+  const district = document.getElementById('b-farmer-district-filter')?.value || '';
+  const search = document.getElementById('b-farmer-search')?.value || '';
+
+  const params = new URLSearchParams();
+  if (crop) params.set('crop', crop);
+  if (district) params.set('district', district);
+  if (search) params.set('crop', search);
+
+  const { data } = await api(`/marketplace/products?${params}`);
+  const grid = document.getElementById('b-farmer-products');
+
+  if (!data.products || !data.products.length) {
+    grid.innerHTML = `
+      <div class="empty-msg" style="grid-column:1/-1">
+        <div class="empty-icon">👨‍🌾</div>
+        <h3>No farmer listings found</h3>
+        <p>Farmers will appear here when they list crops for sale</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = data.products.map(p => `
+    <div class="farmer-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">
+        <div>
+          <div style="font-family:'Baloo 2',sans-serif;font-size:1.15rem;font-weight:800;color:#1a4d1a">${p.crop_name}</div>
+          <div style="font-size:.8rem;color:var(--text-muted)">📍 ${p.district || '—'}, ${p.state || 'WB'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Baloo 2',sans-serif;font-size:1.1rem;font-weight:800;color:var(--buyer-main)">₹${p.price_per_unit}/kg</div>
+          <div style="font-size:.75rem;color:var(--text-muted)">${p.quantity} kg available</div>
+        </div>
+      </div>
+      <div style="background:#f9fdf9;border-radius:8px;padding:.5rem .75rem;margin-bottom:.75rem;font-size:.82rem">
+        👨‍🌾 <strong>${p.farmer_name}</strong> • 📱 ${p.farmer_phone}
+      </div>
+      ${p.description ? `<div style="font-size:.82rem;color:var(--text-muted);margin-bottom:.75rem">${p.description}</div>` : ''}
+      <div style="display:flex;gap:.5rem">
+        <a href="tel:${p.farmer_phone}" class="btn-primary" style="flex:1;text-align:center;font-size:.85rem;padding:.5rem;background:linear-gradient(135deg,#2d6a2d,#3d8b3d)">
+          📞 Call Farmer
+        </a>
+        <button onclick="openBuyerOrderModal(${p.id},'${p.crop_name}',${p.price_per_unit},${p.quantity})"
+          class="btn-buyer" style="flex:1;font-size:.85rem;padding:.5rem">
+          🛒 Place Order
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── ORDERS PAGE ──
+async function loadMyOrders(status = 'all') {
+  const container = document.getElementById('b-orders-list');
+  const { data } = await api('/marketplace/my-orders');
+  let orders = data.orders || [];
+  if (status !== 'all') orders = orders.filter(o => o.status === status);
+
+  if (!orders.length) {
+    container.innerHTML = `
+      <div class="empty-msg">
+        <div class="empty-icon">📦</div>
+        <h3>No orders yet</h3>
+        <p>Browse farmers and place your first order!</p>
+        <button onclick="showBuyerPage('farmers')" class="btn-buyer" style="width:auto;padding:.6rem 1.5rem;margin-top:.75rem">
+          Browse Farmers →
+        </button>
+      </div>`;
+    return;
+  }
+
+  const statusColors = { pending: '#e67e22', confirmed: '#2d6a2d', shipped: '#3498db', delivered: '#27ae60', cancelled: '#c0392b' };
+
+  container.innerHTML = orders.map(o => `
+    <div class="order-card" style="border-left-color:${statusColors[o.status] || '#e67e22'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:800;font-size:1rem">${o.crop_name || 'Crop'}</div>
+          <div style="font-size:.85rem;color:var(--text-muted);margin-top:.2rem">
+            ⚖️ ${o.quantity} kg • 👨‍🌾 Farmer: ${o.farmer_name || '—'}
+          </div>
+          <div style="font-size:.82rem;color:var(--text-muted)">
+            📍 ${o.delivery_address?.substring(0, 50) || '—'}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Baloo 2',sans-serif;font-size:1.1rem;font-weight:800;color:var(--buyer-main)">
+            ₹${Number(o.total_price).toLocaleString('en-IN')}
+          </div>
+          <div style="padding:.2rem .5rem;border-radius:6px;font-size:.75rem;font-weight:700;margin-top:.3rem;background:${statusColors[o.status]}20;color:${statusColors[o.status]}">
+            ${o.status.toUpperCase()}
+          </div>
+        </div>
+      </div>
+      <div style="font-size:.75rem;color:var(--text-light);margin-top:.5rem">
+        📅 Ordered: ${new Date(o.created_at).toLocaleString('en-IN')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterMyOrders(status, el) {
+  document.querySelectorAll('#bpage-orders .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  loadMyOrders(status);
+}
+
+// ── ORDER MODAL ──
+function openBuyerOrderModal(productId, cropName, price, maxQty) {
+  document.getElementById('b-order-product-id').value = productId;
+  document.getElementById('b-order-max-qty').value = maxQty;
+  document.getElementById('b-order-qty').max = maxQty;
+  document.getElementById('b-order-product-info').innerHTML = `
+    <strong>🌾 ${cropName}</strong> at ₹${price}/kg<br>
+    <span style="font-size:.85rem;color:var(--text-muted)">Available: ${maxQty} kg</span>`;
+
+  const user = getUser();
+  if (user) document.getElementById('b-order-phone').value = user.phone || '';
+
+  const modal = document.getElementById('b-order-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('active');
+}
+
+function closeBuyerModal() {
+  const modal = document.getElementById('b-order-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('active');
+}
+
+async function submitBuyerOrder(e) {
+  e.preventDefault();
+  const user = getUser();
+  const body = {
+    product_id: document.getElementById('b-order-product-id').value,
+    quantity: document.getElementById('b-order-qty').value,
+    buyer_name: user?.name || 'Buyer',
+    buyer_phone: document.getElementById('b-order-phone').value,
+    delivery_address: document.getElementById('b-order-address').value,
+  };
+
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true; btn.textContent = '⏳ Placing...';
+
+  const { ok, data } = await api('/marketplace/orders', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+
+  btn.disabled = false; btn.textContent = '✅ Confirm Order';
+
+  if (ok && data.success) {
+    showToast('🎉 Order placed!', 'success');
+    closeBuyerModal();
+    e.target.reset();
+    loadFarmerProducts();
+  } else {
+    showToast(data.message || 'Error', 'error');
+  }
+}
+
+// ── PROFILE PAGE ──
+async function loadBuyerBusinessProfile() {
+  const { data } = await api('/smartsell/buyer/profile');
+  if (data.buyer) {
+    const b = data.buyer;
+    if (document.getElementById('b-company')) document.getElementById('b-company').value = b.company_name || '';
+    if (document.getElementById('b-biz-phone')) document.getElementById('b-biz-phone').value = b.phone || '';
+    if (document.getElementById('b-city')) document.getElementById('b-city').value = b.city || '';
+    if (document.getElementById('b-district')) document.getElementById('b-district').value = b.district || '';
+    if (document.getElementById('b-address')) document.getElementById('b-address').value = b.address || '';
+  }
+}
+
+async function saveBuyerBusinessProfile(e) {
+  e.preventDefault();
+  const body = {
+    company_name: document.getElementById('b-company').value,
+    phone: document.getElementById('b-biz-phone').value,
+    city: document.getElementById('b-city').value,
+    district: document.getElementById('b-district').value,
+    state: document.getElementById('b-state').value,
+    address: document.getElementById('b-address').value,
+  };
+
+  const { ok, data } = await api('/smartsell/buyer/profile', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+
+  if (ok && data.success) {
+    showToast('✅ Profile saved!', 'success');
+  } else {
+    showToast(data.message || 'Error saving', 'error');
+  }
+}
+</script>
+</body>
+</html>
